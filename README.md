@@ -1,5 +1,7 @@
 # attach2resource
-Send a bundle of attachments (usually photos) to a vector layer
+Send a bunch of attachments (usually photos) to a vector layer. 
+
+Creates a layer and attachmets from a GeoJSON file + attachments exported from NextGIS Mobile/Collector:
 
     python attach2resource.py --url sandbox --login administrator --password demodemo
     
