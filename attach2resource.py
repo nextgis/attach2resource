@@ -5,10 +5,10 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 import argparse
-import json,os
+import json,os,sys
 from tqdm import tqdm
 
-#python attach2resource.py --url sandbox --login admin --password demodemo
+#python attach2resource.py --url sandbox --login administrator --password demodemo
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--url',type=str,required=True)
@@ -32,8 +32,7 @@ def lon_3857(x):
 def lat_3857(y):
     return earthRadius * math.log(math.tan(math.pi / 4 + math.radians(y) / 2))
 
-
-def create_layer():
+def create_layer(props):
     #create empty layer using REST API
     structure = dict()
     structure['resource']=dict()
@@ -44,16 +43,28 @@ def create_layer():
     structure['vector_layer']['srs']=dict(id=3857)
     structure['vector_layer']['geometry_type']='POINT'
     structure['vector_layer']['fields']=list()
-    structure['vector_layer']['fields'].append(dict(keyname='datetime',datatype='STRING'))
+    
+    for k,v in props.items():
+        if k != 'attaches':
+            if isinstance(v, int):
+                ft = 'INTEGER'
+            else:
+                ft = 'STRING'
+            structure['vector_layer']['fields'].append(dict(keyname=k,datatype=ft))
 
     response = requests.post(url, json=structure, auth = AUTH)
     vectlyr = response.json()
+
+    if 'exception' in vectlyr.keys():
+        print(vectlyr['title'])
+        sys.exit()
+    
     print('Layer created')
     if args.debug: print(url)
 
     return vectlyr
 
-def add_feature(lon,lat,datetime,layer_id):
+def add_feature(lon,lat,layer_id,props):
     #add feature with attachements
 
     ngwFeature = dict()
@@ -61,7 +72,9 @@ def add_feature(lon,lat,datetime,layer_id):
     ngwFeature['extensions']['attachment'] = None
     ngwFeature['extensions']['description'] = None
     ngwFeature['fields'] = dict()
-    ngwFeature['fields']['datetime'] = datetime
+    for k,v in props.items():
+        if k != 'attaches':
+            ngwFeature['fields'][k] = v
     ngwFeature['geom'] = 'POINT (%s %s)' % (lon,lat) #no reproject, coords are 3857 already
 
     post_url = url + layer_id + '/feature/'
@@ -90,22 +103,27 @@ def add_attachments(attaches,layer_id,feature_ngwid,feature_id):
 if __name__ == '__main__':
     data_dir = 'data'
     f_input_name = 'form.geojson'
+    fullpath = os.path.join(data_dir,f_input_name)
     
-    vectlyr = create_layer()
+    with open(fullpath, 'r', encoding='UTF-8') as data_file:
+        data = json.load(data_file)
+
+    props = data['features'][0]['properties']
+    vectlyr = create_layer(props)
     layer_id = str(vectlyr['id']) #str(6301) #str(vectlyr['id'])
 
-    with open(os.path.join(data_dir,f_input_name), 'r', encoding='UTF-8') as data_file:
-        data = json.load(data_file)
-        
-        features = data['features']
-        for i in tqdm(range(len(features))):
-            feature = data['features'][i]
-            lon = feature['geometry']['coordinates'][0]
-            lat = feature['geometry']['coordinates'][1]
-            datetime = feature['properties']['field_4']
-            response = add_feature(lon,lat,datetime,layer_id)
-            feature_ngwid = str(response['id'])
-            feature_id = str(feature['properties']['_id'])
-            attaches = feature['properties']['attaches']
-            if len(attaches) > 0:
-                response = add_attachments(attaches,layer_id,feature_ngwid,feature_id)            
+    if not os.path.exists(fullpath):
+        print('Input file (*.geojson) not found')
+        sys.exit()
+
+    features = data['features']
+    for i in tqdm(range(len(features))):
+        feature = data['features'][i]
+        lon = feature['geometry']['coordinates'][0]
+        lat = feature['geometry']['coordinates'][1]
+        response = add_feature(lon,lat,layer_id,feature['properties'])
+        feature_ngwid = str(response['id'])
+        feature_id = str(feature['properties']['_id'])
+        attaches = feature['properties']['attaches']
+        if len(attaches) > 0:
+            response = add_attachments(attaches,layer_id,feature_ngwid,feature_id)            
