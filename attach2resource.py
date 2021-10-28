@@ -113,7 +113,9 @@ if __name__ == '__main__':
     props = data['features'][0]['properties']
     if not args.resource_id:
         vectlyr = create_layer(props)
-    layer_id = str(vectlyr['id']) #str(6301) #str(vectlyr['id'])
+        layer_id = str(vectlyr['id']) #str(6301) #str(vectlyr['id'])
+    else:
+        layer_id = args.resource_id
 
     if not os.path.exists(fullpath):
         print('Input file (*.geojson) not found')
