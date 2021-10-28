@@ -15,6 +15,8 @@ parser.add_argument('--url',type=str,required=True)
 parser.add_argument('--login',type=str,default='administrator')
 parser.add_argument('--password',type=str)
 parser.add_argument('--debug', '-d', help='debug mode', action='store_true')
+parser.add_argument('--onlyupdates', '-o', help='Only send updates with ids 1XXXXXXXXXXX', action='store_true')
+parser.add_argument('--resource_id',type=str, help='Resource ID if you need to add data to existing layer')
 
 args = parser.parse_args()
 
@@ -109,7 +111,8 @@ if __name__ == '__main__':
         data = json.load(data_file)
 
     props = data['features'][0]['properties']
-    vectlyr = create_layer(props)
+    if not args.resource_id:
+        vectlyr = create_layer(props)
     layer_id = str(vectlyr['id']) #str(6301) #str(vectlyr['id'])
 
     if not os.path.exists(fullpath):
@@ -121,9 +124,18 @@ if __name__ == '__main__':
         feature = data['features'][i]
         lon = feature['geometry']['coordinates'][0]
         lat = feature['geometry']['coordinates'][1]
-        response = add_feature(lon,lat,layer_id,feature['properties'])
-        feature_ngwid = str(response['id'])
-        feature_id = str(feature['properties']['_id'])
-        attaches = feature['properties']['attaches']
-        if len(attaches) > 0:
-            response = add_attachments(attaches,layer_id,feature_ngwid,feature_id)            
+        if not args.resource_id:
+            response = add_feature(lon,lat,layer_id,feature['properties'])
+            feature_ngwid = str(response['id'])
+            feature_id = str(feature['properties']['_id'])
+            attaches = feature['properties']['attaches']
+            if len(attaches) > 0:
+                response = add_attachments(attaches,layer_id,feature_ngwid,feature_id)            
+        elif args.onlyupdates:
+            if len(str(feature['properties']['_id'])) == 8:
+                response = add_feature(lon,lat,layer_id,feature['properties'])
+                feature_ngwid = str(response['id'])
+                feature_id = str(feature['properties']['_id'])
+                attaches = feature['properties']['attaches']
+                if len(attaches) > 0:
+                    response = add_attachments(attaches,layer_id,feature_ngwid,feature_id)            
