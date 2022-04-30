@@ -5,7 +5,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 import argparse
-import json,os,sys
+import json,os,sys,math
 from tqdm import tqdm
 
 #python attach2resource.py --url sandbox --login administrator --password demodemo
@@ -29,9 +29,11 @@ url_base = 'https://%s.nextgis.com/' % args.url
 url = url_base + 'api/resource/'
 
 def lon_3857(x):
+    earthRadius = 6378137.0
     return earthRadius * math.radians(x)
 
 def lat_3857(y):
+    earthRadius = 6378137.0
     return earthRadius * math.log(math.tan(math.pi / 4 + math.radians(y) / 2))
 
 def create_layer(props):
