@@ -1,4 +1,4 @@
-# Set of scripts to turn
+# Set of scripts to turn photos into NGW vector layer
 
 ## exif2resource.py
 
