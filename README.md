@@ -1,14 +1,23 @@
-# attach2resource
-Send a bunch of attachments (usually photos) to a vector layer. 
+# Set of scripts to turn
 
-Creates a layer and attachmets from a GeoJSON file + attachments exported from NextGIS Mobile/Collector:
+## exif2resource.py
+
+Creates a layer from a bunch of photos with exifs. Each photo - a point with attached photo. Put data in 'data' folder.
+Requires: exifread, tqdm
+
+    python exif2resource.py --url sandbox --login administrator --password demodemo
+
+## attach2resource.py
+
+Creates a layer and attachments from a GeoJSON file + attachments exported from NextGIS Mobile/Collector.
+Requires: tqdm
 
     python attach2resource.py --url sandbox --login administrator --password demodemo
-    
-Works under Python 2.7.x and Python 3.7.x
 
 Params:
 
     * url - subdomain name of your Web GIS url. If your Web GIS is example.nextgis.com use 'example' here.
 
-See also: https://github.com/nextgis/helper_scripts/tree/master/photos2ngw
+## See also
+
+* https://github.com/nextgis/helper_scripts/tree/master/photos2ngw
