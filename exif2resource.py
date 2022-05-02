@@ -22,14 +22,6 @@ AUTH = HTTPBasicAuth(args.login, args.password)
 url_base = 'https://%s.nextgis.com/' % args.url
 url = url_base + 'api/resource/'
 
-def lon_3857(x):
-    earthRadius = 6378137.0
-    return earthRadius * math.radians(x)
-
-def lat_3857(y):
-    earthRadius = 6378137.0
-    return earthRadius * math.log(math.tan(math.pi / 4 + math.radians(y) / 2))
-
 def create_layer(props):
     #create empty layer using REST API
     structure = dict()
@@ -53,7 +45,6 @@ def create_layer(props):
         sys.exit()
     
     print('Layer created')
-    if args.debug: print(url)
 
     return vectlyr
 
@@ -81,9 +72,9 @@ def add_feature(lon,lat,layer_id,fn):
     feature['extensions']['description'] = None
     feature['fields'] = dict()
     feature['fields']['filename'] = fn
-    feature['geom'] = 'POINT ({lon} {lat})'.format(lon=lon_3857(lon),lat=lat_3857(lat))
+    feature['geom'] = 'POINT (%s %s)' % (lon,lat)
 
-    post_url = url + layer_id + '/feature/'
+    post_url = url + layer_id + '/feature/?srs=4326'
     response = requests.post(post_url, data=json.dumps(feature),auth = AUTH)
 
     return response.json()
